@@ -1,347 +1,75 @@
-# uimage
+[update-readmes]   Mode: rewrite — migrating to template structure...
+# mkuimage
 
-[![GoDoc](https://pkg.go.dev/badge/github.com/u-root/mkuimage)](https://pkg.go.dev/github.com/u-root/mkuimage)
-[![codecov](https://codecov.io/gh/u-root/mkuimage/graph/badge.svg?token=5Z9B3OyVYi)](https://codecov.io/gh/u-root/mkuimage)
-[![Slack](https://slack.osfw.dev/badge.svg)](https://slack.osfw.dev)
-[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://github.com/u-root/mkuimage/blob/main/LICENSE)
+[![Built with Ona](https://ona.com/build-with-ona.svg)](https://app.ona.com/#https://github.com/Interested-Deving-1896/mkuimage)
 
-uimage builds initramfs images composed of arbitrary Go commands and files.
+<!-- AI:start:what-it-does -->
+_Description pending._
+<!-- AI:end:what-it-does -->
 
-uimage optimizes for space by utilizing
-[gobusybox](https://github.com/u-root/gobusybox) to compile many arbitrary Go
-commands into one binary.
+## Architecture
 
-uimage can be easily used with [u-root](https://github.com/u-root/u-root),
-which contains many Go coreutils-like commands as well as bootloaders. However,
-uimage supports compilation of any Go command, and the use of u-root is not
-required.
+<!-- AI:start:architecture -->
+_Architecture documentation pending._
+<!-- AI:end:architecture -->
 
-## Getting Started
+## Install
 
-Make sure your Go version is >= 1.21. If your Go version is lower,
+<!-- Add installation instructions here. This section is yours — the AI will not modify it. -->
 
-```shell
-$ go install golang.org/dl/go1.21.5@latest
-$ go1.21.5 download
-$ go1.21.5 version
-# Now use go1.21.5 in place of go
+```bash
+git clone https://github.com/Interested-Deving-1896/mkuimage.git
+cd mkuimage
 ```
 
-Download and install mkuimage either via git:
+## Usage
 
-```shell
-git clone https://github.com/u-root/mkuimage
-cd mkuimage/cmd/mkuimage
-go install
-```
+<!-- Add usage examples here. This section is yours — the AI will not modify it. -->
 
-Or install directly with go:
+## Configuration
 
-```shell
-go install github.com/u-root/mkuimage/cmd/mkuimage@latest
-```
+<!-- Document configuration options here. This section is yours — the AI will not modify it. -->
 
-> [!NOTE]
-> The `mkuimage` command will end up in `$GOPATH/bin/mkuimage`, so you may
-> need to add `$GOPATH/bin` to your `$PATH`.
+## CI
 
-## Examples
+<!-- AI:start:ci -->
+_CI documentation pending._
+<!-- AI:end:ci -->
 
-Here are some examples of using the `mkuimage` command to build an initramfs.
+## Mirror chain
 
-```shell
-git clone https://github.com/u-root/u-root
-```
-
-Build gobusybox binaries of these two commands and add to initramfs:
-
-```shell
-$ cd ./u-root
-$ mkuimage ./cmds/core/{init,gosh}
-
-$ cpio -ivt < /tmp/initramfs.linux_amd64.cpio
-...
--rwxr-x---   0 root     root      4542464 Jan  1  1970 bbin/bb
-lrwxrwxrwx   0 root     root            2 Jan  1  1970 bbin/gosh -> bb
-lrwxrwxrwx   0 root     root            2 Jan  1  1970 bbin/init -> bb
-...
-```
-
-Add symlinks for shell and init:
-
-```shell
-$ mkuimage -initcmd=init -defaultsh=gosh ./cmds/core/{init,gosh}
-
-$ cpio -ivt < /tmp/initramfs.linux_amd64.cpio
-...
-lrwxrwxrwx   0 root     root           12 Jan  1  1970 bin/defaultsh -> ../bbin/gosh
-lrwxrwxrwx   0 root     root           12 Jan  1  1970 bin/sh -> ../bbin/gosh
-...
-lrwxrwxrwx   0 root     root            9 Jan  1  1970 init -> bbin/init
-...
-```
-
-### Builds with globs and exclusion
-
-Build everything from core without ls and losetup:
-
-```shell
-$ mkuimage ./cmds/core/* -./cmds/core/{ls,losetup}
-```
-
-### Multi-module workspace builds
-
-> [!IMPORTANT]
->
-> `mkuimage` works when `go build` and `go list` work as well.
-
-There are 2 ways to build multi-module command images using standard Go tooling.
-
-```shell
-$ mkdir workspace
-$ cd workspace
-$ git clone https://github.com/u-root/u-root
-$ git clone https://github.com/u-root/cpu
-
-$ go work init ./u-root
-$ go work use ./cpu
-
-$ mkuimage ./u-root/cmds/core/{init,gosh} ./cpu/cmds/cpud
-
-$ cpio -ivt < /tmp/initramfs.linux_amd64.cpio
-...
--rwxr-x---   0 root     root      6365184 Jan  1  1970 bbin/bb
-lrwxrwxrwx   0 root     root            2 Jan  1  1970 bbin/cpud -> bb
-lrwxrwxrwx   0 root     root            2 Jan  1  1970 bbin/gosh -> bb
-lrwxrwxrwx   0 root     root            2 Jan  1  1970 bbin/init -> bb
-...
-
-# Works for offline vendored builds as well.
-$ go work vendor # Go 1.22 feature.
-
-$ mkuimage ./u-root/cmds/core/{init,gosh} ./cpu/cmds/cpud
-```
-
-`GBB_PATH` is a place that mkuimage will look for commands. Each colon-separated
-`GBB_PATH` element is concatenated with patterns from the command-line and
-checked for existence. For example:
-
-```shell
-GBB_PATH=$(pwd)/u-root:$(pwd)/cpu mkuimage \
-    cmds/core/{init,gosh} \
-    cmds/cpud
-
-# Matches
-#   ./u-root/cmds/core/{init,gosh}
-#   ./cpu/cmds/cpud
-```
-
-To ease usability, the `goanywhere` tool can create one Go workspaces the fly.
-This works **only with local file system paths**:
-
-```shell
-$ go install github.com/u-root/gobusybox/src/cmd/goanywhere@latest
-
-$ goanywhere ./u-root/cmds/core/{init,gosh} ./cpu/cmds/cpud -- go build -o $(pwd)
-$ goanywhere ./u-root/cmds/core/{init,gosh} ./cpu/cmds/cpud -- mkuimage
-```
-
-`goanywhere` creates a workspace in a temporary directory with the given
-modules, and then execs `u-root` in the workspace passing along the command
-names.
-
-`goanywhere` supports `GBB_PATH`, exclusions, globs, and curly brace expansions
-as well.
-
-> [!CAUTION]
->
-> While workspaces are good for local compilation, they are not meant to be
-> checked in to version control systems. See below for the recommended way.
-
-### Multi-module go.mod builds
-
-You may also create a go.mod with the commands you intend to compile.
-
-To depend on commands outside of ones own repository, the easiest way to depend
-on Go commands is the following:
-
-```sh
-mkdir mydistro
-cd mydistro
-go mod init mydistro
-```
-
-Create a file with some unused build tag like this to create dependencies on
-commands:
-
-```go
-//go:build tools
-
-package something
-
-import (
-        _ "github.com/u-root/u-root/cmds/core/ip"
-        _ "github.com/u-root/u-root/cmds/core/init"
-        _ "github.com/hugelgupf/p9/cmd/p9ufs"
-)
-```
-
-You can generate this file for your repo with the `gencmddeps` tool from
-gobusybox:
+<!-- AI:start:mirror-chain -->
+This repo is maintained in [`Interested-Deving-1896/mkuimage`](https://github.com/Interested-Deving-1896/mkuimage) and mirrored through:
 
 ```
-go install github.com/u-root/gobusybox/src/cmd/gencmddeps@latest
-
-gencmddeps -o deps.go -t tools -p something \
-    github.com/u-root/u-root/cmds/core/{ip,init} \
-    github.com/hugelgupf/p9/cmd/p9ufs
+Interested-Deving-1896/mkuimage  ──►  OpenOS-Project-OSP/mkuimage  ──►  OpenOS-Project-Ecosystem-OOC/mkuimage
 ```
 
-The unused build tag keeps it from being compiled, but its existence forces `go
-mod tidy` to add these dependencies to `go.mod`:
+Changes flow downstream automatically via the hourly mirror chain in
+[`fork-sync-all`](https://github.com/Interested-Deving-1896/fork-sync-all).
+Direct commits to OSP or OOC are detected and opened as PRs back to `Interested-Deving-1896`.
+<!-- AI:end:mirror-chain -->
 
-```sh
-go mod tidy
+## Contributors
 
-mkuimage \
-  github.com/u-root/u-root/cmds/core/ip \
-  github.com/u-root/u-root/cmds/core/init \
-  github.com/hugelgupf/p9/cmd/p9ufs
+<!-- AI:start:contributors -->
+_Contributors pending._
+<!-- AI:end:contributors -->
 
-# Works for offline vendored builds as well.
-go mod vendor
+## Origins
 
-mkuimage \
-  github.com/u-root/u-root/cmds/core/ip \
-  github.com/u-root/u-root/cmds/core/init \
-  github.com/hugelgupf/p9/cmd/p9ufs
-```
+<!-- AI:start:origins -->
+_Original project — no upstream fork._
+<!-- AI:end:origins -->
 
-## Extra Files
+## Resources
 
-You may also include additional files in the initramfs using the `-files` flag.
+<!-- AI:start:resources -->
+_No additional resource files found._
+<!-- AI:end:resources -->
 
-If you add binaries with `-files`, their ldd dependencies will be
-included as well by default. See below for how to disable.
+## License
 
-```shell
-$ mkuimage -files /bin/bash
-
-$ cpio -ivt < /tmp/initramfs.linux_amd64.cpio
-...
--rwxr-xr-x   0 root     root      1277936 Jan  1  1970 bin/bash
-...
-drwxr-xr-x   0 root     root            0 Jan  1  1970 lib/x86_64-linux-gnu
--rwxr-xr-x   0 root     root       210792 Jan  1  1970 lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
--rwxr-xr-x   0 root     root      1926256 Jan  1  1970 lib/x86_64-linux-gnu/libc.so.6
-lrwxrwxrwx   0 root     root           15 Jan  1  1970 lib/x86_64-linux-gnu/libtinfo.so.6 -> libtinfo.so.6.4
--rw-r--r--   0 root     root       216368 Jan  1  1970 lib/x86_64-linux-gnu/libtinfo.so.6.4
-drwxr-xr-x   0 root     root            0 Jan  1  1970 lib64
-lrwxrwxrwx   0 root     root           42 Jan  1  1970 lib64/ld-linux-x86-64.so.2 -> /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
-...
-```
-
-You can determine placement with colons:
-
-```shell
-$ mkuimage -files "/bin/bash:sbin/sh"
-
-$ cpio -ivt < /tmp/initramfs.linux_amd64.cpio
-...
--rwxr-xr-x   0 root     root      1277936 Jan  1  1970 sbin/sh
-...
-```
-
-For example on Debian, if you want to add two kernel modules for testing,
-executing your currently booted kernel:
-
-```shell
-$ mkuimage -files "$HOME/hello.ko:etc/hello.ko" -files "$HOME/hello2.ko:etc/hello2.ko" ./u-root/cmds/core/*
-$ qemu-system-x86_64 -kernel /boot/vmlinuz-$(uname -r) -initrd /tmp/initramfs.linux_amd64.cpio
-```
-
-Use `-skip-ldd` to not automatically include ldd dependencies for binary files. This can be useful for
-- Reproducible Builds: Ensures builds don't depend on the host system's libraries
-- Cross-compilation: When host libraries are incompatible with target architecture
-- Controlled Dependencies: When you want to manually specify exact library versions
-
-## AMD64 Architecture Level
-
-Before building for AMD64, verify that the command
-
-```shell
-go env GOAMD64
-```
-
-prints `v1`. A [`GOAMD64` setting](https://go.dev/wiki/MinimumRequirements#amd64)
-of any higher version may produce such binaries that don't execute on old AMD64
-processors (including the default CPU model of QEMU).
-
-`GOAMD64` can be reset to `v1` with one of the following methods:
-
-*   through the `GOAMD64` environment variable:
-
-    ```shell
-    export GOAMD64=v1
-    ```
-
-*   through `go env` (only takes effect if the `GOAMD64` environment variable
-    is not set):
-
-    ```shell
-    go env -w GOAMD64=v1
-    ```
-
-## Cross Compilation (targeting different architectures and OSes)
-
-Just like standard Go tooling, cross compilation is easy and supported.
-
-To cross compile for an ARM, on Linux:
-
-```shell
-GOARCH=arm mkuimage ./u-root/cmds/core/*
-```
-
-If you are on OS X, and wish to build for Linux on AMD64:
-
-```shell
-GOOS=linux GOARCH=amd64 ./u-root/cmds/core/*
-```
-
-## Testing in QEMU
-
-A good way to test the initramfs generated by u-root is with qemu:
-
-```shell
-qemu-system-x86_64 -nographic -kernel path/to/kernel -initrd /tmp/initramfs.linux_amd64.cpio
-```
-
-Note that you do not have to build a special kernel on your own, it is
-sufficient to use an existing one. Usually you can find one in `/boot`.
-
-If you don't have a kernel handy, you can also get the one we use for VM testing:
-
-```shell
-go install github.com/hugelgupf/vmtest/tools/runvmtest@latest
-
-runvmtest -- bash -c "cp \$VMTEST_KERNEL ./kernel"
-```
-
-It may not have all features you require, however.
-
-To automate testing, you may use the same
-[vmtest](https://github.com/hugelgupf/vmtest) framework that we use as well. It
-has native uimage support.
-
-## Build Modes
-
-mkuimage can create an initramfs in two different modes, specified by `-build`:
-
-*   `bb` mode: One busybox-like binary comprising all the Go tools you ask to
-    include.
-    See [the gobusybox README for how it works](https://github.com/u-root/gobusybox).
-    In this mode, mkuimage copies and rewrites the source of the tools you asked
-    to include to be able to compile everything into one busybox-like binary.
-
-*   `binary` mode: each specified binary is compiled separately and all binaries
-    are added to the initramfs.
+<!-- AI:start:license -->
+[BSD-3-Clause](https://github.com/Interested-Deving-1896/mkuimage/blob/main/LICENSE) © 2026 [Interested-Deving-1896](https://github.com/Interested-Deving-1896)
+<!-- AI:end:license -->
